@@ -1,6 +1,46 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set fileencoding=utf-8 :
+
+"""
+SYNOPSIS
+
+    client.py [-h,--help] [--version] [c, --clientfile <port>, default=1234]
+        [-d, --destination <address>, default=127.0.0.1]
+
+DESCRIPTION
+
+    Creates a ECHO/UDP client, connects to server, sends data and
+    prints the returned data.
+    Default port 1234, default address=127.0.0.1
+
+
+EXAMPLES
+
+    client.py  -h
+
+AUTHOR
+
+    Francisco Romero Batalle <frb2@alumnes.udl.cat>
+
+LICENSE
+
+    This script is published under the Gnu Public License GPL3+
+
+VERSION
+
+    0.0.1
+"""
 
 import socket
+import optparse
+
+__program__ = "client"
+__version__ = '0.0.1'
+__author__ = 'Francisco Romero Batalle <frb2@alumnes.udl.cat>'
+__copyright__ = 'Copyright (c) 2016  Francisco Romero Batalle'
+__license__ = 'GPL3+'
+__vcs_id__ = '$Id: client.py 554 2012-05-06 08:07:51Z frb2 $'
 
 # Fase subscripcio
 
@@ -63,6 +103,15 @@ def setup():
 
 
 if __name__ == '__main__':
+    parser = optparse.OptionParser(formatter=optparse.TitledHelpFormatter(), usage=globals()["__doc__"],
+                                   version=__version__)
+    parser.add_option('-v', '--verbose', action='store_true', default=False, help='verbose output')
+    parser.add_option('-c', '--clientfile', action='store', default="client.cfg",
+                      help='Client settings, default client.cfg')
+    parser.add_option('-d', '--destination', action='store', default="127.0.0.1", help='Listening port, default 1234')
+    (options, args) = parser.parse_args()
+    if len(args) > 0: parser.error('bad args, use --help for help')
+
     setup()
     print name
     print mac
