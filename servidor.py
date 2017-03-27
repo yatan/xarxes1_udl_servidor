@@ -32,7 +32,9 @@ VERSION
     0.0.1
 """
 
+import asyncore
 import optparse
+import socket
 import sys
 
 __program__ = "client"
@@ -100,6 +102,36 @@ class Controlador:
         return str(self.name) + " " + str(self.mac)
 
 
+class TimeChannel(asyncore.dispatcher_with_send):
+    def handle_read(self):
+        raw_data = self.recv(1024)
+        data = str(raw_data.decode())
+        # minimum content that server receives is --> \n
+        data = data[:-1]
+        self.out_buffer = "Server >> ".encode() + raw_data
+
+
+class TimeServer(asyncore.dispatcher):
+    def __init__(self, port=0):
+        asyncore.dispatcher.__init__(self)
+        self.port = port
+        self.create_socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.bind(("", port))
+
+        print "listening on port", self.port
+
+    def handle_read(self):
+        data, addr = self.recvfrom(2048)
+        print addr
+        TimeChannel(data)
+
+    def writable(self):
+        return False  # don't want write notifies
+
+    def handle_write(self):
+        pass
+
+
 def setup():
     global name
     global mac
@@ -162,3 +194,5 @@ if __name__ == '__main__':
     print tcp_port
     readcontrollers()
     print list_controlers
+    server = TimeServer(2345)
+    asyncore.loop()
