@@ -32,8 +32,8 @@ VERSION
     0.0.1
 """
 
-import socket
 import optparse
+import sys
 
 __program__ = "client"
 __version__ = '0.0.1'
@@ -82,6 +82,23 @@ mac = ''
 udp_port = ''
 tcp_port = ''
 
+list_controlers = []
+
+
+class Controlador:
+    name = ""
+    mac = ""
+
+    def __init__(self, nom, macdrr):
+        self.name = nom
+        self.mac = macdrr
+
+    def __str__(self):
+        return str(self.name) + " " + str(self.mac)
+
+    def __repr__(self):
+        return str(self.name) + " " + str(self.mac)
+
 
 def setup():
     global name
@@ -89,17 +106,43 @@ def setup():
     global udp_port
     global tcp_port
 
-    f = open("server.cfg", "r")
-    for line in f:
-        tmp = line.split()
-        if tmp[0].find('Name') != -1:
-            name = tmp[1]
-        elif tmp[0].find('MAC') != -1:
-            mac = tmp[1]
-        elif tmp[0].find('UDP-port') != -1:
-            udp_port = tmp[1]
-        elif tmp[0].find('TCP-port') != -1:
-            tcp_port = tmp[1]
+    try:
+        f = open("server.cfg", "r")
+        for line in f:
+            if line not in ['\n', '\r\n']:
+                tmp = line.split()
+                if tmp[0].find('Name') != -1:
+                    name = tmp[2]
+                elif tmp[0].find('MAC') != -1:
+                    mac = tmp[2]
+                elif tmp[0].find('UDP-port') != -1:
+                    udp_port = tmp[2]
+                elif tmp[0].find('TCP-port') != -1:
+                    tcp_port = tmp[2]
+    except IOError as e:
+        print "I/O error({0}): {1}".format(e.errno, e.strerror)
+    except ValueError:
+        print "Could not convert data to an integer."
+    except:
+        print "Unexpected error:", sys.exc_info()[0]
+        raise
+
+
+def readcontrollers():
+    try:
+        f = open("controlers.dat", "r")
+        for line in f:
+            if line not in ['\n', '\r\n']:
+                tmp = line.replace('\n', '').replace(' ', '').split(',')
+                list_controlers.append(Controlador(tmp[0], tmp[1]))
+
+    except IOError as e:
+        print "I/O error({0}): {1}".format(e.errno, e.strerror)
+    except ValueError:
+        print "Could not convert data to an integer."
+    except:
+        print "Unexpected error:", sys.exc_info()[0]
+        raise
 
 
 if __name__ == '__main__':
@@ -117,3 +160,5 @@ if __name__ == '__main__':
     print mac
     print udp_port
     print tcp_port
+    readcontrollers()
+    print list_controlers
