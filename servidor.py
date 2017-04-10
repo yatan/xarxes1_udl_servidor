@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 # vim: set fileencoding=utf-8 :
 
@@ -32,8 +32,10 @@ VERSION
     0.0.1
 """
 
+import SocketServer
 import optparse
-import sys
+import threading
+from struct import *
 
 __program__ = "client"
 __version__ = '0.0.1'
@@ -83,6 +85,46 @@ udp_port = ''
 tcp_port = ''
 
 list_controlers = []
+
+
+def printardata(resposta):
+    rebut = unpack('B13s9s80s', resposta)
+    trama = []
+    paquet = {'tipus': 0x00, 'MAC': "", 'alea': 0, 'dades': ""}
+    # print rebut
+    for element in rebut:
+        trama.append(str(element).split('\x00')[0])
+
+    paquet['tipus'] = hex(int(trama[0]));
+    paquet['MAC'] = trama[1];
+    paquet['alea'] = trama[2];
+    paquet['dades'] = trama[3];
+    print paquet
+
+
+class ThreadedUDPRequestHandler(SocketServer.BaseRequestHandler):
+    def handle(self):
+        data = self.request[0].strip()
+        # get port number
+        port = self.client_address[1]
+        # get the communicate socket
+        socket = self.request[1]
+        # get client host ip address
+        client_address = (self.client_address[0])
+        # proof of multithread
+        cur_thread = threading.current_thread()
+        print "thread %s" % cur_thread.name
+        print "received call from client address :%s" % client_address
+        print "received data from port [%s]: %s" % (port, data)
+        printardata(data)
+
+        # assemble a response message to client
+        response = "%s %s" % (cur_thread.name, data)
+        socket.sendto(response.upper(), self.client_address)
+
+
+class ThreadedUDPServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
+    pass
 
 
 class Controlador:
@@ -162,3 +204,18 @@ if __name__ == '__main__':
     print tcp_port
     readcontrollers()
     print list_controlers
+
+    HOST, PORT = "localhost", 2345
+
+    server = ThreadedUDPServer((HOST, PORT),
+                               ThreadedUDPRequestHandler)
+    ip, port = server.server_address
+    server.serve_forever()
+    # Start a thread with the server --
+    # that thread will then start one
+    # more thread for each request
+    server_thread = threading.Thread(target=server.serve_forever)
+    # Exit the server thread when the main thread terminates
+    server_thread.daemon = True
+    server_thread.start()
+    server.shutdown()
