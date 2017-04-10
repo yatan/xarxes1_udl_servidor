@@ -109,20 +109,22 @@ def printardata(resposta, socket, thread):
     paquet['MAC'] = trama[1]
     paquet['alea'] = trama[2]
     paquet['dades'] = trama[3]
-    if paquet['tipus'] == SUBS_REQ:
-        print paquet
-    elif paquet['tipus'] == HELLO:
+    if paquet['tipus'] == hex(SUBS_REQ):
+        print "SUBS_REEREQQQ"
+        cosa = pack('B13s9s80s', SUBS_ACK, mac, '000000', '6565')
+        socket.sendto(cosa, thread.client_address)
+    elif paquet['tipus'] == hex(HELLO):
         print "HELOLLOLO"
+        cosa = pack('B13s9s80s', HELLO, mac, '000000', '6565')
+        socket.sendto(cosa, thread.client_address)
 
-    cosa = pack('B13s9s80s', SUBS_ACK, mac, '000000', '6565')
-    socket.sendto(cosa, thread.client_address)
 
 
 class ThreadedUDPRequestHandler(SocketServer.BaseRequestHandler):
     def handle(self):
-        print vars(self)
+        # print vars(self)
         data = self.request[0].strip()
-        print data
+
         # get port number
         port = self.client_address[1]
         # get the communicate socket
@@ -131,7 +133,7 @@ class ThreadedUDPRequestHandler(SocketServer.BaseRequestHandler):
         client_address = (self.client_address[0])
         # proof of multithread
         cur_thread = threading.current_thread()
-        print "thread %s" % cur_thread.name
+        # print "thread %s" % cur_thread.name
         # print "received call from client address :%s" % client_address
         # print "received data from port [%s]: %s" % (port, data)
         printardata(data, socket, self)
