@@ -102,34 +102,22 @@ class Controlador:
         return str(self.name) + " " + str(self.mac)
 
 
-class TimeChannel(asyncore.dispatcher_with_send):
-    def handle_read(self):
-        raw_data = self.recv(1024)
-        data = str(raw_data.decode())
-        # minimum content that server receives is --> \n
-        data = data[:-1]
-        self.out_buffer = "Server >> ".encode() + raw_data
+class EchoHandler(asyncore.dispatcher_with_send):
+    def handle_write(self):
+        pass
 
 
-class TimeServer(asyncore.dispatcher):
-    def __init__(self, port=0):
+class EchoServer(asyncore.dispatcher):
+    def __init__(self, host, port):
         asyncore.dispatcher.__init__(self)
-        self.port = port
         self.create_socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.bind(("", port))
-
-        print "listening on port", self.port
+        self.set_reuse_addr()
+        self.bind((host, port))
 
     def handle_read(self):
         data, addr = self.recvfrom(2048)
-        print addr
-        TimeChannel(data)
-
-    def writable(self):
-        return False  # don't want write notifies
-
-    def handle_write(self):
-        pass
+        print('Incoming connection from %s' % repr(addr))
+        handler = EchoHandler(data)
 
 
 def setup():
@@ -194,5 +182,5 @@ if __name__ == '__main__':
     print tcp_port
     readcontrollers()
     print list_controlers
-    server = TimeServer(2345)
+    server = EchoServer('localhost', 2345)
     asyncore.loop()
