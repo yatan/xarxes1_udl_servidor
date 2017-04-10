@@ -32,9 +32,7 @@ VERSION
     0.0.1
 """
 
-import asyncore
 import optparse
-import socket
 import sys
 
 __program__ = "client"
@@ -102,24 +100,6 @@ class Controlador:
         return str(self.name) + " " + str(self.mac)
 
 
-class EchoHandler(asyncore.dispatcher_with_send):
-    def handle_write(self):
-        pass
-
-
-class EchoServer(asyncore.dispatcher):
-    def __init__(self, host, port):
-        asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.set_reuse_addr()
-        self.bind((host, port))
-
-    def handle_read(self):
-        data, addr = self.recvfrom(2048)
-        print('Incoming connection from %s' % repr(addr))
-        handler = EchoHandler(data)
-
-
 def setup():
     global name
     global mac
@@ -182,5 +162,3 @@ if __name__ == '__main__':
     print tcp_port
     readcontrollers()
     print list_controlers
-    server = EchoServer('localhost', 2345)
-    asyncore.loop()
