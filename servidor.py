@@ -77,6 +77,8 @@ DATA_REJ = 0x25
 
 # Variables globals
 
+options = []
+
 # Variables fitxer server.cfg
 
 name = ''
@@ -105,7 +107,7 @@ class Controlador:
         return str(self.name) + " " + str(self.mac)
 
     def __repr__(self):
-        return str(self.name) + " " + str(self.mac)
+        return str(self.name) + " " + str(self.mac) + " Estat: " + str(self.status) + "\n"
 
     # Comparador entre 2 controladors siguin iguals (nom i situacio)
     def __cmp__(self, other):
@@ -146,22 +148,23 @@ def printardata(resposta, socket, thread):
     paquet['dades'] = trama[3]
     # Analitzar les dades del paquet rebut
     if paquet['tipus'] == hex(SUBS_REQ):
-        print "SUBS_REEREQQQ"
+        if options.debug:
+            print "SUBS_REEREQQQ"
         # En cas de SUBS_REQ, verificar que la mac i
         # el nom del controlador estan a la llista, i verificar
         # que aleatori = 00000, guardar la situacio de les dades
         controladorrebut = paquet['dades'].split(",")
         controladorrebut = Controlador(controladorrebut[0], paquet['MAC'])
 
-        print controladorrebut
-
         if controladorrebut in list_controlers:
             enviarUDP(socket, thread, SUBS_ACK, mac, '000000', "6565")
             controladorrebut.status = WAIT_ACK_INFO
-            print "Acceptat - El controlador esta a la llista de controladors valids"
+            if options.debug:
+                print "Acceptat - El controlador esta a la llista de controladors valids"
         else:
             enviarUDP(socket, thread, SUBS_REJ, paquet['MAC'], paquet['alea'], "Controlador no esta a la llista")
-            print "El controlador no esta a la llista de controladors"
+            if options.debug:
+                print "El controlador no esta a la llista de controladors"
 
     elif paquet['tipus'] == hex(HELLO):
         print "HELOLLOLO"
@@ -201,6 +204,7 @@ def setup():
     global mac
     global udp_port
     global tcp_port
+    global options
 
     try:
         f = open("server.cfg", "r")
