@@ -34,6 +34,7 @@ VERSION
 
 import SocketServer
 import optparse
+import socket
 import threading
 from struct import *
 
@@ -120,21 +121,21 @@ class Controlador:
 estatactiu = DISCONNECTED
 
 
-def enviarUDP(socket, thread, tipus, mac, aleat, dades):
+def enviarUDP(sockt, thread, tipus, maca, aleat, dades):
     """
     Funcio per enviar trama UDP
-    :param socket: 
+    :param sockt: 
     :param thread: 
     :param tipus: 
-    :param mac: 
+    :param maca: 
     :param aleat: 
     :param dades: 
     """
-    cosa = pack('B13s9s80s', tipus, mac, aleat, dades)
-    socket.sendto(cosa, thread.client_address)
+    cosa = pack('B13s9s80s', tipus, maca, aleat, dades)
+    sockt.sendto(cosa, thread.client_address)
 
 
-def printardata(resposta, socket, thread):
+def parserdata(resposta, sockt, thread):
     rebut = unpack('B13s9s80s', resposta)
     trama = []
     paquet = {'tipus': 0x00, 'MAC': "", 'alea': 0, 'dades': ""}
@@ -157,27 +158,61 @@ def printardata(resposta, socket, thread):
         controladorrebut = Controlador(controladorrebut[0], paquet['MAC'])
 
         if controladorrebut in list_controlers:
-            enviarUDP(socket, thread, SUBS_ACK, mac, '000000', "6565")
+            enviarUDP(sockt, thread, SUBS_ACK, mac, '000000', "6667")  # \.... Dades amb port udp aleatori
             controladorrebut.status = WAIT_ACK_INFO
+            t = threading.Thread(target=filudp())
+            t.start()
+
             if options.debug:
                 print "Acceptat - El controlador esta a la llista de controladors valids"
         else:
-            enviarUDP(socket, thread, SUBS_REJ, paquet['MAC'], paquet['alea'], "Controlador no esta a la llista")
+            enviarUDP(sockt, thread, SUBS_REJ, paquet['MAC'], paquet['alea'], "Controlador no esta a la llista")
             if options.debug:
                 print "El controlador no esta a la llista de controladors"
 
     elif paquet['tipus'] == hex(HELLO):
         print "HELOLLOLO"
         cosa = pack('B13s9s80s', HELLO, mac, '000000', '6565')
-        socket.sendto(cosa, thread.client_address)
+        sockt.sendto(cosa, thread.client_address)
+
+    else:
+        print "UNKNOWN paquet " + paquet['tipus']
+
+
+def filudp(port=6667):
+    """
+    Fil on es creara un servei udp per escoltar les
+     dades desde un port especificat per nosaltres.    
+    :param port: 
+    """
+    UDP_IP = "localhost"
+
+    sock = socket.socket(socket.AF_INET,  # Internet
+                         socket.SOCK_DGRAM)  # UDP
+    sock.bind((UDP_IP, port))
+
+    while True:
+        data, addr = sock.recvfrom(1024)  # buffer size is 1024 bytes
+        rebut = unpack('B13s9s80s', data)
+        trama = []
+        paquet = {'tipus': 0x00, 'MAC': "", 'alea': 0, 'dades': ""}
+        # print rebut
+        for element in rebut:
+            trama.append(str(element).split('\x00')[0])
+
+        paquet['tipus'] = hex(int(trama[0]))
+        paquet['MAC'] = trama[1]
+        paquet['alea'] = trama[2]
+        paquet['dades'] = trama[3]
+        print "received message from port: " + str(port) + " : ", paquet
 
 
 class ThreadedUDPRequestHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         # print vars(self)
         data = self.request[0].strip()
-        socket = self.request[1]
-        printardata(data, socket, self)
+        sockt = self.request[1]
+        parserdata(data, sockt, self)
 
         # get port number
         # port = self.client_address[1]
