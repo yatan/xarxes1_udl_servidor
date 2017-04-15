@@ -90,6 +90,7 @@ list_controlers = []
 class Controlador:
     name = ""
     mac = ""
+    status = DISCONNECTED
 
     def __init__(self, nom, macdrr):
         """
@@ -114,14 +115,7 @@ class Controlador:
             return 1
 
 
-class estat:
-    DISCONNECTED = 0
-    WAIT_REG = 1
-    REGISTERED = 2
-    ALIVE = 3
-
-
-estatactiu = estat.DISCONNECTED
+estatactiu = DISCONNECTED
 
 
 def enviarUDP(socket, thread, tipus, mac, aleat, dades):
@@ -163,6 +157,7 @@ def printardata(resposta, socket, thread):
 
         if controladorrebut in list_controlers:
             enviarUDP(socket, thread, SUBS_ACK, mac, '000000', "6565")
+            controladorrebut.status = WAIT_ACK_INFO
             print "Acceptat - El controlador esta a la llista de controladors valids"
         else:
             enviarUDP(socket, thread, SUBS_REJ, paquet['MAC'], paquet['alea'], "Controlador no esta a la llista")
