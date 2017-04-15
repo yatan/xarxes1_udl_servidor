@@ -280,6 +280,12 @@ def readcontrollers():
         raise
 
 
+def readconsole():
+    while 1:
+        res = raw_input()
+        print res
+
+
 if __name__ == '__main__':
     parser = optparse.OptionParser(formatter=optparse.TitledHelpFormatter(), usage=globals()["__doc__"],
                                    version=__version__)
@@ -301,6 +307,10 @@ if __name__ == '__main__':
 
     if options.debug:
         print "Llista controladors:", list_controlers
+
+    # Input console
+    t = threading.Thread(target=readconsole())
+    t.start()
 
     # Threaded server
     HOST, PORT = "localhost", int(udp_port)
