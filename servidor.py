@@ -87,6 +87,33 @@ tcp_port = ''
 list_controlers = []
 
 
+class Controlador:
+    name = ""
+    mac = ""
+
+    def __init__(self, nom, macdrr):
+        """
+        Generar un nou Controlador a partir del nom i mac
+        :param nom:
+        :param macdrr:
+        """
+        self.name = nom
+        self.mac = macdrr
+
+    def __str__(self):
+        return str(self.name) + " " + str(self.mac)
+
+    def __repr__(self):
+        return str(self.name) + " " + str(self.mac)
+
+    # Comparador entre 2 controladors siguin iguals (nom i situacio)
+    def __cmp__(self, other):
+        if self.name == other.name and self.mac == other.mac:
+            return 0
+        else:
+            return 1
+
+
 class estat:
     DISCONNECTED = 0
     WAIT_REG = 1
@@ -95,6 +122,20 @@ class estat:
 
 
 estatactiu = estat.DISCONNECTED
+
+
+def enviarUDP(socket, thread, tipus, mac, aleat, dades):
+    """
+    Funcio per enviar trama UDP
+    :param socket: 
+    :param thread: 
+    :param tipus: 
+    :param mac: 
+    :param aleat: 
+    :param dades: 
+    """
+    cosa = pack('B13s9s80s', tipus, mac, aleat, dades)
+    socket.sendto(cosa, thread.client_address)
 
 
 def printardata(resposta, socket, thread):
@@ -109,34 +150,47 @@ def printardata(resposta, socket, thread):
     paquet['MAC'] = trama[1]
     paquet['alea'] = trama[2]
     paquet['dades'] = trama[3]
+    # Analitzar les dades del paquet rebut
     if paquet['tipus'] == hex(SUBS_REQ):
         print "SUBS_REEREQQQ"
-        cosa = pack('B13s9s80s', SUBS_ACK, mac, '000000', '6565')
-        socket.sendto(cosa, thread.client_address)
+        # En cas de SUBS_REQ, verificar que la mac i
+        # el nom del controlador estan a la llista, i verificar
+        # que aleatori = 00000, guardar la situacio de les dades
+        controladorrebut = paquet['dades'].split(",")
+        controladorrebut = Controlador(controladorrebut[0], paquet['MAC'])
+
+        print controladorrebut
+
+        if controladorrebut in list_controlers:
+            enviarUDP(socket, thread, SUBS_ACK, mac, '000000', "6565")
+            print "Acceptat - El controlador esta a la llista de controladors valids"
+        else:
+            enviarUDP(socket, thread, SUBS_REJ, paquet['MAC'], paquet['alea'], "Controlador no esta a la llista")
+            print "El controlador no esta a la llista de controladors"
+
     elif paquet['tipus'] == hex(HELLO):
         print "HELOLLOLO"
         cosa = pack('B13s9s80s', HELLO, mac, '000000', '6565')
         socket.sendto(cosa, thread.client_address)
 
 
-
 class ThreadedUDPRequestHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         # print vars(self)
         data = self.request[0].strip()
+        socket = self.request[1]
+        printardata(data, socket, self)
 
         # get port number
-        port = self.client_address[1]
+        # port = self.client_address[1]
         # get the communicate socket
-        socket = self.request[1]
         # get client host ip address
-        client_address = (self.client_address[0])
+        # client_address = (self.client_address[0])
         # proof of multithread
-        cur_thread = threading.current_thread()
+        # cur_thread = threading.current_thread()
         # print "thread %s" % cur_thread.name
         # print "received call from client address :%s" % client_address
         # print "received data from port [%s]: %s" % (port, data)
-        printardata(data, socket, self)
 
         # assemble a response message to client
         # response = "%s %s" % (cur_thread.name, data)
@@ -145,21 +199,6 @@ class ThreadedUDPRequestHandler(SocketServer.BaseRequestHandler):
 
 class ThreadedUDPServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
     pass
-
-
-class Controlador:
-    name = ""
-    mac = ""
-
-    def __init__(self, nom, macdrr):
-        self.name = nom
-        self.mac = macdrr
-
-    def __str__(self):
-        return str(self.name) + " " + str(self.mac)
-
-    def __repr__(self):
-        return str(self.name) + " " + str(self.mac)
 
 
 def setup():
@@ -210,20 +249,24 @@ def readcontrollers():
 if __name__ == '__main__':
     parser = optparse.OptionParser(formatter=optparse.TitledHelpFormatter(), usage=globals()["__doc__"],
                                    version=__version__)
-    parser.add_option('-v', '--verbose', action='store_true', default=False, help='verbose output')
+    parser.add_option('-d', '--debug', action='store_true', default=False, help='debug output')
     parser.add_option('-c', '--clientfile', action='store', default="client.cfg",
                       help='Client settings, default client.cfg')
-    parser.add_option('-d', '--destination', action='store', default="127.0.0.1", help='Listening port, default 1234')
+    # parser.add_option('-d', '--destination', action='store', default="127.0.0.1", help='Listening port, default 1234')
     (options, args) = parser.parse_args()
     if len(args) > 0: parser.error('bad args, use --help for help')
-
+    # Lectura dades configuracio
     setup()
-    print name
-    print mac
-    print udp_port
-    print tcp_port
+    if options.debug:
+        print name
+        print mac
+        print udp_port
+        print tcp_port
+    # Lectura fitxer controladors
     readcontrollers()
-    print list_controlers
+
+    if options.debug:
+        print "Llista controladors:", list_controlers
 
     # Threaded server
     HOST, PORT = "localhost", int(udp_port)
