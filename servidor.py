@@ -312,7 +312,7 @@ if __name__ == '__main__':
         print "Llista controladors:", list_controlers
 
     # Input console
-    t = threading.Thread(target=readconsole())
+    t = threading.Thread(target=readconsole)
     t.start()
 
     # Threaded server
