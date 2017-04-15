@@ -35,6 +35,7 @@ VERSION
 import SocketServer
 import optparse
 import socket
+import sys
 import threading
 from struct import *
 
@@ -283,7 +284,9 @@ def readcontrollers():
 def readconsole():
     while 1:
         res = raw_input()
-        print res
+        if res == "quit":
+            print "QUIT"
+            sys.exit(0)
 
 
 if __name__ == '__main__':
