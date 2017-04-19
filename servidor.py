@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# vim: set fileencoding=utf-8 :
 
 """
 SYNOPSIS
@@ -44,7 +43,6 @@ __version__ = '0.0.1'
 __author__ = 'Francisco Romero Batalle <frb2@alumnes.udl.cat>'
 __copyright__ = 'Copyright (c) 2016  Francisco Romero Batalle'
 __license__ = 'GPL3+'
-__vcs_id__ = '$Id: client.py 554 2012-05-06 08:07:51Z frb2 $'
 
 # Fase subscripcio
 
@@ -235,7 +233,7 @@ class ThreadedUDPServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
     pass
 
 
-def setup():
+def setup(fitxer):
     global name
     global mac
     global udp_port
@@ -243,7 +241,7 @@ def setup():
     global options
 
     try:
-        f = open("server.cfg", "r")
+        f = open(fitxer, "r")
         for line in f:
             if line not in ['\n', '\r\n']:
                 tmp = line.split()
@@ -264,9 +262,9 @@ def setup():
         raise
 
 
-def readcontrollers():
+def readcontrollers(fitxer):
     try:
-        f = open("controlers.dat", "r")
+        f = open(fitxer, "r")
         for line in f:
             if line not in ['\n', '\r\n']:
                 tmp = line.replace('\n', '').replace(' ', '').split(',')
@@ -287,31 +285,37 @@ def readconsole():
         if res == "quit":
             print "QUIT"
             sys.exit(0)
+        if res == "list":
+            print "Llista controladors:", list_controlers
 
 
 if __name__ == '__main__':
     parser = optparse.OptionParser(formatter=optparse.TitledHelpFormatter(), usage=globals()["__doc__"],
                                    version=__version__)
     parser.add_option('-d', '--debug', action='store_true', default=False, help='debug output')
-    parser.add_option('-c', '--clientfile', action='store', default="client.cfg",
+    parser.add_option('-c', '--clientfile', action='store', default="server.cfg",
                       help='Client settings, default client.cfg')
-    # parser.add_option('-d', '--destination', action='store', default="127.0.0.1", help='Listening port, default 1234')
+    parser.add_option('-u', '--authfile', action='store', default="controlers.dat",
+                      help='Client settings, default client.cfg')
     (options, args) = parser.parse_args()
     if len(args) > 0: parser.error('bad args, use --help for help')
+
     # Lectura dades configuracio
-    setup()
+    setup(options.clientfile)
+
     if options.debug:
         print name
         print mac
         print udp_port
         print tcp_port
+
     # Lectura fitxer controladors
-    readcontrollers()
+    readcontrollers(options.authfile)
 
     if options.debug:
         print "Llista controladors:", list_controlers
 
-    # Input console
+    # Input console thread
     t = threading.Thread(target=readconsole)
     t.start()
 
