@@ -33,8 +33,8 @@ VERSION
 
 import SocketServer
 import optparse
+import os
 import socket
-import sys
 import threading
 from struct import *
 
@@ -284,7 +284,7 @@ def readconsole():
         res = raw_input()
         if res == "quit":
             print "QUIT"
-            sys.exit(0)
+            os._exit(1)
         if res == "list":
             print "Llista controladors:", list_controlers
 
