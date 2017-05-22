@@ -108,7 +108,7 @@ class Controlador:
         return str(self.name) + " " + str(self.mac)
 
     def __repr__(self):
-        return str(self.name) + " " + str(self.mac) + " Estat: " + str(self.status) + "\n"
+        return str(self.name) + " " + str(self.mac) + " Estat: " + str(hex(self.status)) + "\n"
 
     # Comparador entre 2 controladors siguin iguals (nom i situacio)
     def __cmp__(self, other):
