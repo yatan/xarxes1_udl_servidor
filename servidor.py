@@ -31,6 +31,7 @@ VERSION
     0.0.1
 """
 
+import random
 import SocketServer
 import optparse
 import os
@@ -123,12 +124,12 @@ estatactiu = DISCONNECTED
 def enviarUDP(sockt, thread, tipus, maca, aleat, dades):
     """
     Funcio per enviar trama UDP
-    :param sockt: 
-    :param thread: 
-    :param tipus: 
-    :param maca: 
-    :param aleat: 
-    :param dades: 
+    :param sockt:
+    :param thread:
+    :param tipus:
+    :param maca:
+    :param aleat:
+    :param dades:
     """
     cosa = pack('B13s9s80s', tipus, maca, aleat, dades)
     sockt.sendto(cosa, thread.client_address)
@@ -157,9 +158,10 @@ def parserdata(resposta, sockt, thread):
         controladorrebut = Controlador(controladorrebut[0], paquet['MAC'])
 
         if controladorrebut in list_controlers:
-            enviarUDP(sockt, thread, SUBS_ACK, mac, '000000', "6667")  # \.... Dades amb port udp aleatori
+            numero = random.randint(5000,7000)
+            enviarUDP(sockt, thread, SUBS_ACK, mac, '000000', str(numero))  # \.... Dades amb port udp aleatori
             controladorrebut.status = WAIT_ACK_INFO
-            t = threading.Thread(target=filudp())
+            t = threading.Thread(target=filudp(numero), kwargs={'port' : str(numero)})
             t.start()
 
             if options.debug:
@@ -178,16 +180,17 @@ def parserdata(resposta, sockt, thread):
         print "UNKNOWN paquet " + paquet['tipus']
 
 
-def filudp(port=6667):
+def filudp(port):
     """
     Fil on es creara un servei udp per escoltar les
-     dades desde un port especificat per nosaltres.    
-    :param port: 
+     dades desde un port especificat per nosaltres.
+    :param port:
     """
-    UDP_IP = "localhost"
+    UDP_IP = ""
 
     sock = socket.socket(socket.AF_INET,  # Internet
                          socket.SOCK_DGRAM)  # UDP
+    print UDP_IP, port
     sock.bind((UDP_IP, port))
 
     while True:
